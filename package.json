@@ -1,0 +1,21 @@
+{
+  "name": "novasmp-discord-bot",
+  "version": "1.0.0",
+  "description": "Professional Discord bot scaffold built with discord.js v14",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "deploy:commands": "node deploy-commands.js",
+    "deploy:events": "node deploy-events.js"
+  },
+  "author": "NovaSMP",
+  "license": "MIT",
+  "dependencies": {
+    "@discordjs/voice": "^0.16.0",
+    "@napi-rs/canvas": "^1.0.0",
+    "discord.js": "^14.14.0",
+    "dotenv": "^16.4.3",
+    "ytdl-core": "^4.11.0"
+  }
+}
