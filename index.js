@@ -21,6 +21,10 @@ const client = new Client({
 client.commands = new Collection();
 client.events = new Collection();
 client.voiceTimestamps = new Map();
+// Map to track temporary voice channels and their metadata
+client.tempVoiceChannels = new Map();
+// Map to store last select choice for a temp VC dashboard (vcId -> memberId)
+client.tempVCSelection = new Map();
 client.ticketStore = createTicketStore();
 client.warningStore = createWarningStore();
 client.waitingRoom = {
