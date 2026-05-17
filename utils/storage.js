@@ -36,14 +36,62 @@ function createWarningStore() {
 }
 
 function createTicketStore() {
-  const store = loadJson(ticketsPath, { openTickets: [] });
+  const store = loadJson(ticketsPath, { openTickets: [], closedTickets: [] });
   return {
     getOpen(userId) {
-      return store.openTickets.find((ticket) => ticket.userId === userId);
+      return store.openTickets.find((ticket) => ticket.userId === userId && ticket.status === 'open');
     },
     add(ticket) {
-      store.openTickets.push(ticket);
+      const newTicket = {
+        ...ticket,
+        status: 'open',
+        createdAt: new Date().toISOString(),
+        reason: ticket.reason || '',
+        category: ticket.category || '',
+        isPaused: false,
+        pausedAt: null,
+        logs: []
+      };
+      store.openTickets.push(newTicket);
       saveJson(ticketsPath, store);
+    },
+    getByChannelId(channelId) {
+      return store.openTickets.find((ticket) => ticket.channelId === channelId);
+    },
+    setPaused(channelId, isPaused) {
+      const ticket = this.getByChannelId(channelId);
+      if (ticket) {
+        ticket.isPaused = isPaused;
+        ticket.pausedAt = isPaused ? new Date().toISOString() : null;
+        this.addLog(channelId, isPaused ? 'PAUSED' : 'RESUMED', 'System');
+        saveJson(ticketsPath, store);
+      }
+    },
+    addLog(channelId, action, actor = 'System', details = '') {
+      const ticket = this.getByChannelId(channelId);
+      if (ticket) {
+        ticket.logs.push({
+          timestamp: new Date().toISOString(),
+          action,
+          actor,
+          details
+        });
+        saveJson(ticketsPath, store);
+      }
+    },
+    close(channelId, closedBy = 'System') {
+      const ticket = store.openTickets.find((t) => t.channelId === channelId);
+      if (ticket) {
+        ticket.status = 'closed';
+        ticket.closedBy = closedBy;
+        ticket.closedAt = new Date().toISOString();
+        this.addLog(channelId, 'CLOSED', closedBy);
+        store.closedTickets.push(ticket);
+        store.openTickets = store.openTickets.filter((t) => t.channelId !== channelId);
+        saveJson(ticketsPath, store);
+        return ticket;
+      }
+      return null;
     },
     remove(channelId) {
       store.openTickets = store.openTickets.filter((ticket) => ticket.channelId !== channelId);

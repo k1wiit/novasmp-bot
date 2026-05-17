@@ -1,10 +1,17 @@
 const { createEmbed, COLORS } = require('../utils/embedBuilder');
+const { handleTicketCommand } = require('../handlers/ticketCommands');
 
 module.exports = {
   name: 'messageCreate',
   async execute(client, message) {
     try {
       if (message.author.bot) return;
+
+      // Handle ticket commands (.pause, .resume, .close)
+      if (message.content.startsWith('.')) {
+        if (await handleTicketCommand(client, message)) return;
+      }
+
       const content = message.content.toLowerCase();
       if (!content.includes('ip') && !content.includes('ip adresse')) return;
 

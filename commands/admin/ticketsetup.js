@@ -24,10 +24,10 @@ module.exports = {
         .setCustomId('ticket_select')
         .setPlaceholder('Wähle eine Ticket-Kategorie')
         .addOptions([
-          { label: 'Support', description: 'Allgemeine Support-Anfrage', value: 'support', emoji: '🛠️' },
-          { label: 'Spieler melden', description: 'Verstoße gegen Regeln melden', value: 'report', emoji: '⚠️' },
-          { label: 'Spendenproblem', description: 'Probleme mit Spenden klären', value: 'donation', emoji: '💰' },
-          { label: 'Allgemeine Frage', description: 'Eine allgemeine Frage stellen', value: 'question', emoji: '❓' }
+          { label: 'Bewerbung', description: 'Stelle deine Bewerbung ein', value: 'bewerbung', emoji: '📋' },
+          { label: 'Bug Meldung', description: 'Melde einen Bug', value: 'bugmeldung', emoji: '🐛' },
+          { label: 'Fragen', description: 'Stelle eine Frage', value: 'fragen', emoji: '❓' },
+          { label: 'Reporting', description: 'Melde einen Spieler', value: 'reporting', emoji: '⚠️' }
         ]);
 
       const row = new ActionRowBuilder().addComponents(menu);
