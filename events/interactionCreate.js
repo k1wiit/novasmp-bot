@@ -66,6 +66,73 @@ module.exports = {
           }
         }
 
+        // Ticket reason modal
+        if (interaction.customId.startsWith('ticket_reason_')) {
+          const category = interaction.customId.replace('ticket_reason_', '');
+          const reason = interaction.fields.getTextInputValue('ticketReason');
+
+          const ticketCategory = interaction.guild.channels.cache.get(process.env.TICKET_CATEGORY_ID);
+          if (!ticketCategory) {
+            return await interaction.reply({ content: 'Die Ticket-Kategorie ist nicht konfiguriert.', flags: 64 });
+          }
+
+          // Create ticket channel with category + username
+          const ticketName = `${category}-${interaction.user.username}`.slice(0, 90).toLowerCase();
+          const channel = await interaction.guild.channels.create({
+            name: ticketName,
+            type: 0,
+            parent: ticketCategory.id,
+            permissionOverwrites: [
+              {
+                id: interaction.guild.roles.everyone,
+                deny: ['ViewChannel']
+              },
+              {
+                id: interaction.user.id,
+                allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory']
+              }
+            ]
+          });
+
+          const staffRole = interaction.guild.roles.cache.find(
+            (role) => role.id === process.env.STAFF_ROLE || role.name === process.env.STAFF_ROLE || role.name === 'Staff'
+          );
+          if (staffRole) {
+            await channel.permissionOverwrites.edit(staffRole, {
+              ViewChannel: true,
+              SendMessages: true,
+              ReadMessageHistory: true
+            });
+          }
+
+          const embed = new EmbedBuilder()
+            .setTitle('✅ Ticket erstellt')
+            .setDescription('Danke, dass du ein Ticket eröffnet hast. Ein Teammitglied hilft dir gleich weiter.')
+            .addFields(
+              { name: 'Benutzer', value: interaction.user.tag, inline: true },
+              { name: 'Kategorie', value: category.charAt(0).toUpperCase() + category.slice(1), inline: true },
+              { name: 'Grund', value: reason, inline: false }
+            )
+            .setColor(0x00ff00)
+            .setTimestamp();
+
+          const buttons = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('close_ticket').setLabel('Ticket schließen').setStyle(ButtonStyle.Danger),
+            new ButtonBuilder().setCustomId('pause_ticket').setLabel('⏸️ Pausieren').setStyle(ButtonStyle.Secondary)
+          );
+
+          await channel.send({ content: `<@${interaction.user.id}>`, embeds: [embed], components: [buttons] });
+          client.ticketStore.add({
+            userId: interaction.user.id,
+            channelId: channel.id,
+            category: category,
+            reason: reason
+          });
+          client.ticketStore.addLog(channel.id, 'CREATED', interaction.user.tag, `Category: ${category}`);
+
+          return await interaction.reply({ content: `✅ Ticket erstellt: ${channel}`, flags: 64 });
+        }
+
         return;
       }
 
@@ -93,72 +160,6 @@ module.exports = {
         modal.addComponents(new ActionRowBuilder().addComponents(reasonInput));
         await interaction.showModal(modal);
         return;
-      }
-
-      if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_reason_')) {
-        const category = interaction.customId.replace('ticket_reason_', '');
-        const reason = interaction.fields.getTextInputValue('ticketReason');
-
-        const ticketCategory = interaction.guild.channels.cache.get(process.env.TICKET_CATEGORY_ID);
-        if (!ticketCategory) {
-          return await interaction.reply({ content: 'Die Ticket-Kategorie ist nicht konfiguriert.', flags: 64 });
-        }
-
-        // Create ticket channel with category + username
-        const ticketName = `${category}-${interaction.user.username}`.slice(0, 90).toLowerCase();
-        const channel = await interaction.guild.channels.create({
-          name: ticketName,
-          type: 0,
-          parent: ticketCategory.id,
-          permissionOverwrites: [
-            {
-              id: interaction.guild.roles.everyone,
-              deny: ['ViewChannel']
-            },
-            {
-              id: interaction.user.id,
-              allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory']
-            }
-          ]
-        });
-
-        const staffRole = interaction.guild.roles.cache.find(
-          (role) => role.id === process.env.STAFF_ROLE || role.name === process.env.STAFF_ROLE || role.name === 'Staff'
-        );
-        if (staffRole) {
-          await channel.permissionOverwrites.edit(staffRole, {
-            ViewChannel: true,
-            SendMessages: true,
-            ReadMessageHistory: true
-          });
-        }
-
-        const embed = new EmbedBuilder()
-          .setTitle('✅ Ticket erstellt')
-          .setDescription('Danke, dass du ein Ticket eröffnet hast. Ein Teammitglied hilft dir gleich weiter.')
-          .addFields(
-            { name: 'Benutzer', value: interaction.user.tag, inline: true },
-            { name: 'Kategorie', value: category.charAt(0).toUpperCase() + category.slice(1), inline: true },
-            { name: 'Grund', value: reason, inline: false }
-          )
-          .setColor(0x00ff00)
-          .setTimestamp();
-
-        const buttons = new ActionRowBuilder().addComponents(
-          new ButtonBuilder().setCustomId('close_ticket').setLabel('Ticket schließen').setStyle(ButtonStyle.Danger),
-          new ButtonBuilder().setCustomId('pause_ticket').setLabel('⏸️ Pausieren').setStyle(ButtonStyle.Secondary)
-        );
-
-        await channel.send({ content: `<@${interaction.user.id}>`, embeds: [embed], components: [buttons] });
-        client.ticketStore.add({
-          userId: interaction.user.id,
-          channelId: channel.id,
-          category: category,
-          reason: reason
-        });
-        client.ticketStore.addLog(channel.id, 'CREATED', interaction.user.tag, `Category: ${category}`);
-
-        return await interaction.reply({ content: `✅ Ticket erstellt: ${channel}`, flags: 64 });
       }
 
       if (interaction.isButton() && interaction.customId === 'close_ticket') {
@@ -212,10 +213,12 @@ module.exports = {
         client.ticketStore.close(interaction.channel.id, interaction.user.tag);
         await interaction.reply({ content: '✅ Ticket wurde geschlossen und protokolliert.', flags: 64 });
         
-        // Delete channel after 3 seconds
+        // Delete channel after 5 seconds
         setTimeout(async () => {
-          await interaction.channel.delete().catch(() => null);
-        }, 3000);
+          if (interaction.channel?.deletable) {
+            await interaction.channel.delete().catch(() => null);
+          }
+        }, 5000);
       }
 
       if (interaction.isButton() && interaction.customId === 'pause_ticket') {

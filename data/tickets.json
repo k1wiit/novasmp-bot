@@ -1,3 +1,31 @@
 {
-  "openTickets": []
+  "openTickets": [],
+  "closedTickets": [
+    {
+      "userId": "1011545451733975050",
+      "channelId": "1505610483099635904",
+      "category": "fragen",
+      "reason": "WUEHVOFUYHEVqwobuhiEFOYUHVBIEFw",
+      "status": "closed",
+      "createdAt": "2026-05-17T16:38:32.410Z",
+      "closedBy": "k1wit",
+      "closedAt": "2026-05-17T16:38:50.385Z",
+      "isPaused": false,
+      "pausedAt": null,
+      "logs": [
+        {
+          "timestamp": "2026-05-17T16:38:32.410Z",
+          "action": "CREATED",
+          "actor": "k1wit",
+          "details": "Category: fragen"
+        },
+        {
+          "timestamp": "2026-05-17T16:38:50.385Z",
+          "action": "CLOSED",
+          "actor": "k1wit",
+          "details": ""
+        }
+      ]
+    }
+  ]
 }

@@ -37,21 +37,40 @@ function createWarningStore() {
 
 function createTicketStore() {
   const store = loadJson(ticketsPath, { openTickets: [], closedTickets: [] });
+
+  function normalizeTicket(ticket) {
+    return {
+      userId: ticket.userId || '',
+      channelId: ticket.channelId || '',
+      category: ticket.category || '',
+      reason: ticket.reason || '',
+      status: ticket.status || 'open',
+      createdAt: ticket.createdAt || new Date().toISOString(),
+      closedBy: ticket.closedBy || null,
+      closedAt: ticket.closedAt || null,
+      isPaused: typeof ticket.isPaused === 'boolean' ? ticket.isPaused : false,
+      pausedAt: ticket.pausedAt || null,
+      logs: Array.isArray(ticket.logs) ? ticket.logs : []
+    };
+  }
+
+  store.openTickets = Array.isArray(store.openTickets) ? store.openTickets.map(normalizeTicket) : [];
+  store.closedTickets = Array.isArray(store.closedTickets) ? store.closedTickets.map(normalizeTicket) : [];
+  saveJson(ticketsPath, store);
+
   return {
     getOpen(userId) {
       return store.openTickets.find((ticket) => ticket.userId === userId && ticket.status === 'open');
     },
     add(ticket) {
-      const newTicket = {
+      const newTicket = normalizeTicket({
         ...ticket,
         status: 'open',
         createdAt: new Date().toISOString(),
-        reason: ticket.reason || '',
-        category: ticket.category || '',
         isPaused: false,
         pausedAt: null,
         logs: []
-      };
+      });
       store.openTickets.push(newTicket);
       saveJson(ticketsPath, store);
     },
@@ -70,6 +89,7 @@ function createTicketStore() {
     addLog(channelId, action, actor = 'System', details = '') {
       const ticket = this.getByChannelId(channelId);
       if (ticket) {
+        ticket.logs = Array.isArray(ticket.logs) ? ticket.logs : [];
         ticket.logs.push({
           timestamp: new Date().toISOString(),
           action,

@@ -146,7 +146,7 @@ module.exports = {
 
       const closeEmbed = new EmbedBuilder()
         .setTitle('✅ Ticket geschlossen')
-        .setDescription('Danke für die Nutzung unseres Ticket-Systems. Der Kanal wird in 3 Sekunden gelöscht.')
+        .setDescription('Danke für die Nutzung unseres Ticket-Systems. Der Kanal wird in 5 Sekunden gelöscht.')
         .setColor(0x00ff00)
         .setTimestamp();
 
@@ -154,10 +154,12 @@ module.exports = {
         embeds: [closeEmbed]
       });
 
-      // Delete channel after 3 seconds
+      // Delete channel after 5 seconds
       setTimeout(async () => {
-        await message.channel.delete().catch(() => null);
-      }, 3000);
+        if (message.channel.deletable) {
+          await message.channel.delete().catch(() => null);
+        }
+      }, 5000);
 
       return true;
     }
