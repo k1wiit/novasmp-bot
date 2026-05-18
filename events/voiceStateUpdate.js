@@ -188,17 +188,24 @@ module.exports = {
         }
 
         // Manage waiting room playback
-        if (newState.channelId === waitingRoomId) {
+        if (newState.channelId === waitingRoomId && !oldState.channelId) {
+          // Someone just joined the waiting room (not a channel switch)
           const targetChannel = newState.guild.channels.cache.get(waitingRoomId);
           if (targetChannel) {
-            await startWaitingRoomMusic(client, targetChannel).catch((error) => console.error('Waiting room music start error:', error));
+            const nonBotMembers = targetChannel.members.filter((member) => !member.user.bot);
+            // Start music only if this is the first person joining (count is now 1 after this join)
+            if (nonBotMembers.size === 1) {
+              await startWaitingRoomMusic(client, targetChannel).catch((error) => console.error('Waiting room music start error:', error));
+            }
           }
         }
 
         if (oldState.channelId === waitingRoomId && newState.channelId !== waitingRoomId) {
+          // Someone just left the waiting room
           const voiceChannel = oldState.guild.channels.cache.get(waitingRoomId);
           if (voiceChannel) {
             const nonBotMembers = voiceChannel.members.filter((member) => !member.user.bot);
+            // Stop music if waiting room is now empty
             if (nonBotMembers.size === 0) {
               stopWaitingRoomMusic(client);
             }

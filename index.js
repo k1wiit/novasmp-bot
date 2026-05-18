@@ -1,4 +1,14 @@
 require('dotenv').config();
+// Prevent noisy TimeoutNegativeWarning from libraries that may pass negative delays.
+// This clamps negative timeout values to zero. It's a safe runtime shim; if you
+// prefer the root-cause fix we can remove it and trace the offending library.
+{
+  const _setTimeout = global.setTimeout;
+  global.setTimeout = (fn, delay, ...args) => {
+    const d = Number(delay);
+    return _setTimeout(fn, Number.isFinite(d) ? Math.max(0, d) : delay, ...args);
+  };
+}
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
@@ -30,7 +40,8 @@ client.warningStore = createWarningStore();
 client.waitingRoom = {
   connection: null,
   player: null,
-  resource: null
+  resource: null,
+  playerListenerAdded: false
 };
 
 // Ensure data directory exists and required JSON files are initialized.
