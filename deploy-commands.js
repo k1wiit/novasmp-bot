@@ -1,25 +1,39 @@
 require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
-const { REST, Routes } = require('discord.js');
+const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 
 const commands = [];
 const commandsPath = path.join(__dirname, 'commands');
-const walk = (dir) => {
-  for (const file of fs.readdirSync(dir)) {
-    const filePath = path.join(dir, file);
-    if (fs.statSync(filePath).isDirectory()) {
-      walk(filePath);
-    } else if (file.endsWith('.js')) {
-      const command = require(filePath);
-      if (command.data) {
-        commands.push(command.data.toJSON());
+
+for (const entry of fs.readdirSync(commandsPath)) {
+  const full = path.join(commandsPath, entry);
+  if (fs.statSync(full).isDirectory()) {
+    const builder = new SlashCommandBuilder()
+      .setName(entry)
+      .setDescription(`Category: ${entry} commands`);
+
+    for (const file of fs.readdirSync(full).filter((f) => f.endsWith('.js'))) {
+      try {
+        const cmd = require(path.join(full, file));
+        const name = (cmd.data && cmd.data.name) ? cmd.data.name : file.replace(/\.js$/, '');
+        const desc = (cmd.data && cmd.data.description) ? cmd.data.description : 'No description';
+        builder.addSubcommand((s) => s.setName(name).setDescription(desc));
+      } catch (e) {
+        console.warn(`Failed to load command for registration: ${file} in ${entry}`, e);
       }
     }
-  }
-};
 
-walk(commandsPath);
+    commands.push(builder.toJSON());
+  } else if (entry.endsWith('.js')) {
+    try {
+      const cmd = require(full);
+      if (cmd.data) commands.push(cmd.data.toJSON());
+    } catch (e) {
+      console.warn(`Failed to load root command for registration: ${entry}`, e);
+    }
+  }
+}
 
 const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 

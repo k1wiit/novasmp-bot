@@ -1,13 +1,19 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionsBitField } = require('discord.js');
 const { COLORS } = require('../utils/embedBuilder');
+const { info, error } = require('../utils/logger');
 
 module.exports = {
   name: 'interactionCreate',
   async execute(client, interaction) {
     try {
       if (interaction.isChatInputCommand()) {
+        const subcommand = interaction.options.getSubcommand?.() || 'none';
+        info('Interaction command', `${interaction.commandName} sub=${subcommand} user=${interaction.user.tag} guild=${interaction.guild?.name || 'DM'}`);
         const command = client.commands.get(interaction.commandName);
-        if (!command) return;
+        if (!command) {
+          error('Command handler not found', interaction.commandName);
+          return;
+        }
         return await command.execute(interaction);
       }
 

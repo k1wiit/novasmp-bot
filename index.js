@@ -15,6 +15,7 @@ const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js'
 const { loadCommands } = require('./handlers/commandHandler');
 const { loadEvents } = require('./handlers/eventHandler');
 const { createTicketStore, createWarningStore } = require('./utils/storage');
+const { info, error } = require('./utils/logger');
 
 // Create client with the core intents needed for guilds, messages, members, and voice.
 const client = new Client({
@@ -51,13 +52,15 @@ if (!fs.existsSync(dataDir)) {
 }
 
 loadCommands(client, path.join(__dirname, 'commands'));
+info(`Loaded ${client.commands.size} commands`);
 loadEvents(client, path.join(__dirname, 'events'));
+info(`Loaded ${client.events.size} events`);
 
 client.once('ready', () => {
-  console.log(`Logged in as ${client.user.tag}. Ready to serve ${client.commands.size} commands.`);
+  info(`Logged in as ${client.user.tag}. Ready to serve ${client.commands.size} commands.`);
 });
 
-client.login(process.env.BOT_TOKEN).catch((error) => {
-  console.error('Failed to login:', error);
+client.login(process.env.BOT_TOKEN).catch((loginError) => {
+  error('Failed to login', loginError);
   process.exit(1);
 });

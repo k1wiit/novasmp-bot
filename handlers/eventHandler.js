@@ -1,7 +1,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { info, warn } = require('../utils/logger');
 
 function loadEvents(client, eventsPath) {
+  info('Loading events', eventsPath);
   const eventFiles = [];
 
   const walk = (dir) => {
@@ -20,7 +22,7 @@ function loadEvents(client, eventsPath) {
   for (const filePath of eventFiles) {
     const event = require(filePath);
     if (!event.name || !event.execute) {
-      console.warn(`Skipping invalid event file: ${filePath}`);
+      warn(`Skipping invalid event file`, filePath);
       continue;
     }
 
@@ -32,6 +34,7 @@ function loadEvents(client, eventsPath) {
     }
 
     client.events.set(event.name, { ...event, listener });
+    info(`Loaded event ${event.name}`);
   }
 }
 

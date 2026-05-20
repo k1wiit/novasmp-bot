@@ -1,6 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 const { COLORS } = require('../utils/embedBuilder');
 const { startWaitingRoomMusic, stopWaitingRoomMusic } = require('../utils/music');
+const { info } = require('../utils/logger');
 
 module.exports = {
   name: 'voiceStateUpdate',
@@ -13,6 +14,7 @@ module.exports = {
       const now = Date.now();
       if (!oldState.channelId && newState.channelId) {
         client.voiceTimestamps.set(newState.id, now);
+        info(`Voice join detected`, `${newState.member.user.tag} in ${newState.channel.name}`);
       }
 
       if (oldState.channelId && !newState.channelId) {
@@ -20,6 +22,7 @@ module.exports = {
         if (joinedAt) {
           const durationMs = now - joinedAt;
           const durationSeconds = Math.floor(durationMs / 1000);
+          info(`Voice leave detected`, `${oldState.member.user.tag} left ${oldState.channel.name} after ${durationSeconds}s`);
           const embed = new EmbedBuilder()
             .setTitle('Voice-Session beendet')
             .setColor(COLORS.voice)
